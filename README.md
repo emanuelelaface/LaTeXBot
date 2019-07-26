@@ -1,4 +1,4 @@
-This is a Telegram Bot that render LaTeX syntax in the chat.
+This is a Telegram Bot that renders the LaTeX syntax in the chat.
 The engine of LaTeX is the service provided by https://math.now.sh, so no local LaTeX installation is required.
 
 The workflow is very easy:
