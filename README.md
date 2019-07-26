@@ -13,3 +13,5 @@ To be able to use in groups, you need to disable the default privacy setting in 
 The bot as a feature to remove the latex source after the rendering in order to keep clean the chat. This feature works only if the bot is group administrator with the "Delete messages" function enabled.
 
 If you want to try mine it is sufficient that you add <a href=https://t.me/myLaTeXbot>@mylatexbot</a> to your group chat. Please consider that there is no warranty that I will keep it working continuosly, so if you need it for professional reasons, consider to register your own bot.
+
+<img src=https://github.com/emanuelelaface/LaTeXBot/blob/master/screen-shot.png></img>
