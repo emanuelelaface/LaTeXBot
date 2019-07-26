@@ -1,0 +1,55 @@
+import os
+fpid = os.fork()
+if fpid != 0:
+  quit()
+
+import telegram
+from telegram.ext import Updater
+from telegram.ext import CommandHandler, RegexHandler
+import requests
+import re
+from io import BytesIO
+from cairosvg import svg2png
+import urllib.parse
+from PIL import Image
+import numpy
+from webptools import webplib as webp
+
+telegram_token='' # Here you have to pyt your telegram token
+updater = Updater(token=telegram_token, user_sig_handler=True)
+dispatcher = updater.dispatcher
+
+def latex_parser(bot, update):
+    chat_id = update['message']['chat']['id']
+    message_id = update['message']['message_id']
+    url_base = 'https://math.now.sh?from='
+    latex_text = re.search(r'\$.*?\$', update['message']['text']).group()[1:-1]
+
+    latex_text = urllib.parse.quote(latex_text)
+    response = requests.get(url_base+latex_text)
+    if response.content.decode().find('error') == -1:
+        output_img = BytesIO()
+        svg2png(bytestring=response.content, write_to=output_img, dpi=1200)
+        output_img.seek(0)
+        try:
+            bot.delete_message(chat_id=chat_id, message_id=message_id)
+        except:
+            None
+        _,_,_,a = Image.open(output_img).split()
+        a=numpy.asarray(a)
+        output_img.close()
+        r=255-(a//2)
+        g=255-(a//2)
+        b=255-(a//2)
+        out_file = '/run/user/1768603665/latex-img_'+str(numpy.random.randint(1e8))
+        Image.fromarray(numpy.dstack((r,g,b,a))).save(out_file+'.png')
+        webp.cwebp(out_file+'.png', out_file+'.webp', "-q 100")
+        bot.sendSticker(chat_id=chat_id, sticker=open(out_file+'.webp','rb'))
+        output_img.close()
+        os.remove(out_file+'.png')
+        os.remove(out_file+'.webp')
+    else:
+        bot.sendMessage(chat_id=chat_id, text='Invalid LaTeX Syntax')
+
+dispatcher.add_handler(RegexHandler('\$(.*?)\$', latex_parser))
+updater.start_polling()
