@@ -15,7 +15,7 @@ from PIL import Image
 import numpy
 from webptools import webplib as webp
 
-telegram_token='' # Here you have to pyt your telegram token
+telegram_token='' # Add here the BotFather Telegram Token
 updater = Updater(token=telegram_token, user_sig_handler=True)
 dispatcher = updater.dispatcher
 
