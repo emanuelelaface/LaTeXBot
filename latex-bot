@@ -3,7 +3,6 @@ fpid = os.fork()
 if fpid != 0:
     quit()
 
-
 import telegram
 from telegram.ext import Updater, CommandHandler, RegexHandler, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -16,12 +15,13 @@ from PIL import Image
 import numpy
 from webptools import webplib as webp
 
-telegram_token='' # Telegram Token From BotFather
+telegram_token='' #BotFather token here
 updater = Updater(token=telegram_token, user_sig_handler=True)
 dispatcher = updater.dispatcher
 
 def latex_to_png(latex_text, sticker):
     to_zoom=False
+    sticker_size = 512
     url_base = 'https://math.now.sh?from='
     latex_text = re.search(r'\$.*?\$', latex_text).group()[1:-1]
     latex_text = urllib.parse.quote(latex_text)
@@ -35,12 +35,13 @@ def latex_to_png(latex_text, sticker):
         output_img.close()
         if sticker:
             if a.shape[0]>a.shape[1]:
-                a=numpy.append(a,numpy.zeros((a.shape[0],a.shape[1]//3), dtype=numpy.uint8),axis=1)
+                ratio = a.shape[0]/sticker_size
+                if a.shape[1]+120*ratio<=a.shape[0]:
+                    a=numpy.append(a,numpy.zeros((a.shape[0],int(120*ratio)), dtype=numpy.uint8),axis=1)
             else:
-                ratio = int(a.shape[1]/a.shape[0]/4)
-                if a.shape[0]*ratio > 1024:
-                    ratio=int(1024/a.shape[0])
-                a=numpy.append(a,numpy.zeros((a.shape[0]*ratio,a.shape[1]), dtype=numpy.uint8),axis=0)
+                ratio = a.shape[1]/sticker_size
+                if a.shape[0]+70*ratio<=a.shape[1]:
+                    a=numpy.append(a,numpy.zeros((int(70*ratio),a.shape[1]), dtype=numpy.uint8),axis=0)
             r=255-(a//2)
             g=255-(a//2)
             b=255-(a//2)
@@ -50,10 +51,10 @@ def latex_to_png(latex_text, sticker):
             b=255-a
         out_file = '/run/user/1768603665/latex-img_'+str(numpy.random.randint(1e8))
         final_png = Image.fromarray(numpy.dstack((r,g,b,a)))
-        final_png.thumbnail((2048,2048), Image.ANTIALIAS)
+        final_png.thumbnail((sticker_size,sticker_size), Image.ANTIALIAS)
         final_png.save(out_file+'.png')
         final_png.close()
-        if a.shape[0] > 2048 or a.shape[1] > 2048:
+        if a.shape[0] > sticker_size*4 or a.shape[1] > sticker_size*4:
             to_zoom=True
         return out_file, to_zoom
     else:
