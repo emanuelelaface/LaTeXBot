@@ -1,3 +1,5 @@
+#!/home/emanuelelaface/anaconda3/bin/python
+
 import os
 fpid = os.fork()
 if fpid != 0:
@@ -15,7 +17,7 @@ from PIL import Image
 import numpy
 from webptools import webplib as webp
 
-telegram_token='' #BotFather token here
+telegram_token='' # BotFather Token here
 updater = Updater(token=telegram_token, user_sig_handler=True)
 dispatcher = updater.dispatcher
 
@@ -46,6 +48,14 @@ def latex_to_png(latex_text, sticker):
             g=255-(a//2)
             b=255-(a//2)
         else:
+            if a.shape[0]>a.shape[1]:
+                tmp_img = numpy.zeros((a.shape[0],int(a.shape[0]/1.68)), dtype=numpy.uint8)
+                tmp_img[:,int(a.shape[0]/1.68/2-a.shape[1]/2):int(a.shape[0]/1.68/2+a.shape[1]/2)]=a
+                a=tmp_img
+            else:
+                tmp_img = numpy.zeros((int(a.shape[1]/1.68),a.shape[1]), dtype=numpy.uint8)
+                tmp_img[int(a.shape[1]/1.68/2-a.shape[0]/2):int(a.shape[1]/1.68/2+a.shape[0]/2)]=a
+                a=tmp_img
             r=255-a
             g=255-a
             b=255-a
@@ -54,7 +64,7 @@ def latex_to_png(latex_text, sticker):
         final_png.thumbnail((sticker_size,sticker_size), Image.ANTIALIAS)
         final_png.save(out_file+'.png')
         final_png.close()
-        if a.shape[0] > sticker_size*4 or a.shape[1] > sticker_size*4:
+        if a.shape[0] > 2048 or a.shape[1] > 2048:
             to_zoom=True
         return out_file, to_zoom
     else:
@@ -72,7 +82,10 @@ def latex_sender(bot, update):
             None
         webp.cwebp(out_file+'.png', out_file+'.webp', "-q 100")
         if to_zoom:
-            menuKeyboard=InlineKeyboardMarkup([[InlineKeyboardButton("Zoom Image", callback_data=latex_text)]])
+            latex_file = open(out_file+'.tex','w')
+            latex_file.write(latex_text)
+            latex_file.close()
+            menuKeyboard=InlineKeyboardMarkup([[InlineKeyboardButton("Zoom Image", callback_data=out_file)]])
             bot.sendSticker(chat_id=chat_id, sticker=open(out_file+'.webp','rb'), reply_markup=menuKeyboard)
         else:
             bot.sendSticker(chat_id=chat_id, sticker=open(out_file+'.webp','rb'))
@@ -84,7 +97,11 @@ def latex_sender(bot, update):
 def png_sender(bot, update):
     query = update.callback_query
     chat_id = query.message.chat_id
-    latex_text = query.data
+    message_id = query.message.message_id
+    latex_file = query.data
+    latex_text = open(latex_file+'.tex','r').read()
+    os.remove(latex_file+'.tex')
+    bot.delete_message(chat_id=chat_id, message_id=message_id)
     out_file, to_zoom = latex_to_png(latex_text, False)
     if out_file:
         bot.sendPhoto(chat_id=chat_id, photo=open(out_file+'.png','rb'))
@@ -92,6 +109,7 @@ def png_sender(bot, update):
     else:
         bot.sendMessage(chat_id=chat_id, text='Invalid LaTeX Syntax')
 
-dispatcher.add_handler(RegexHandler('\$(.*?)\$', latex_sender))
+dispatcher.add_handler(RegexHandler('\$(.*?)\$', latex_sender)) 
 dispatcher.add_handler(CallbackQueryHandler(png_sender))
 updater.start_polling()
+
